@@ -12,12 +12,13 @@ using System.Threading.Tasks;
 
 namespace Application.Features.Brands.Commands.CreateBrand
 {
-    public partial class CreateBrandCommand:IRequest<CreatedBrandDto>
+    public class CreateBrandCommand:IRequest<CreatedBrandDto>
     {
         public string Name { get; set; }
 
-        public class CreateBrandCommandHandler : IRequestHandler<CreateBrandCommand, CreatedBrandDto>
+        public class CreateBrandCommandHandler : IRequestHandler<CreateBrandCommand, CreatedBrandDto> //request olarak command alıp onu dto olarak geri döndürme bildirimi.
         {
+            //işlem yapılacak kısımların enjekte edilmesi
             private readonly IBrandRepository _brandRepository;
             private readonly IMapper _mapper;
             private readonly BrandBusinessRules _brandBusinessRules;
@@ -31,12 +32,17 @@ namespace Application.Features.Brands.Commands.CreateBrand
 
             public async Task<CreatedBrandDto> Handle(CreateBrandCommand request, CancellationToken cancellationToken)
             {
+                //rule tarafında yazıldığı ve tüm commandler buradan geçiyor. tüm proje için tek try catch.
                 await _brandBusinessRules.BrandNameCanNotBeDuplicatedWhenInserted(request.Name);
 
+                //request, command'e denk geliyor. command de crud işlemlerimizi temsil ediyor. burada requesti commande mapliyoruz.
                 Brand mappedBrand = _mapper.Map<Brand>(request);
+                //oluşan requesti async şekilde db'ye kaydediyoruz.
                 Brand createdBrand = await _brandRepository.AddAsync(mappedBrand);
+                //create...commandhandler classını tanımlarken command alıp o commandın dto'sunu çevireceğimizi söyledik. burada da db'ye eklenen brandi dto'ya çevirdik.
                 CreatedBrandDto createdBrandDto = _mapper.Map<CreatedBrandDto>(createdBrand);
 
+                //dto return'ü.
                 return createdBrandDto;
 
             }
